@@ -24,6 +24,7 @@ go.work
 
 # Google OAuth credentials
 google-credentials.json
+config/token.json
 
 # IDE
 .idea/

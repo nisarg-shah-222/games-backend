@@ -41,7 +41,7 @@ func NewAuthHandler(cfg *config.Config) (*AuthHandler, error) {
 
 	switch cfg.EmailProvider {
 	case "gmail":
-		emailClient, err = email.NewGmailClient(cfg.GmailTokenPath, cfg.GmailFromEmail)
+		emailClient, err = email.NewGmailClient(cfg.GmailTokenPath, cfg.GmailTokenJSON, cfg.GmailFromEmail)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize Gmail client: %w", err)
 		}
@@ -49,7 +49,7 @@ func NewAuthHandler(cfg *config.Config) (*AuthHandler, error) {
 		emailClient = email.NewMailgunClient(cfg.MailgunAPIKey, cfg.MailgunDomain, cfg.MailgunBaseURL, cfg.MailgunFromEmail)
 	default:
 		// Default to Gmail
-		emailClient, err = email.NewGmailClient(cfg.GmailTokenPath, cfg.GmailFromEmail)
+		emailClient, err = email.NewGmailClient(cfg.GmailTokenPath, cfg.GmailTokenJSON, cfg.GmailFromEmail)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize Gmail client: %w", err)
 		}

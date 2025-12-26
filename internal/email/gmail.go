@@ -16,27 +16,39 @@ import (
 
 // GmailClient handles email sending via Gmail API
 type GmailClient struct {
-	service *gmail.Service
+	service   *gmail.Service
 	fromEmail string
 }
 
 // TokenData represents the token.json structure
 type TokenData struct {
-	Token        string    `json:"token"`
-	RefreshToken string    `json:"refresh_token"`
-	TokenURI     string    `json:"token_uri"`
-	ClientID     string    `json:"client_id"`
-	ClientSecret string    `json:"client_secret"`
-	Scopes       []string  `json:"scopes"`
-	Expiry       string    `json:"expiry"`
+	Token        string   `json:"token"`
+	RefreshToken string   `json:"refresh_token"`
+	TokenURI     string   `json:"token_uri"`
+	ClientID     string   `json:"client_id"`
+	ClientSecret string   `json:"client_secret"`
+	Scopes       []string `json:"scopes"`
+	Expiry       string   `json:"expiry"`
 }
 
-// NewGmailClient creates a new Gmail client using token.json
-func NewGmailClient(tokenPath string, fromEmail string) (*GmailClient, error) {
-	// Read token.json
-	tokenData, err := loadToken(tokenPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load token: %w", err)
+// NewGmailClient creates a new Gmail client using token.json or token JSON from env var
+func NewGmailClient(tokenPath string, tokenJSON string, fromEmail string) (*GmailClient, error) {
+	// Read token from env var first, then fall back to file
+	var tokenData *TokenData
+	var err error
+
+	if tokenJSON != "" {
+		// Parse token from environment variable
+		tokenData, err = parseTokenJSON(tokenJSON)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse token from environment variable: %w", err)
+		}
+	} else {
+		// Read token from file
+		tokenData, err = loadToken(tokenPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load token: %w", err)
+		}
 	}
 
 	// Create OAuth2 config
@@ -163,3 +175,23 @@ func loadToken(tokenPath string) (*TokenData, error) {
 	return &tokenData, nil
 }
 
+// parseTokenJSON parses token data from JSON string
+func parseTokenJSON(jsonStr string) (*TokenData, error) {
+	var tokenData TokenData
+	if err := json.Unmarshal([]byte(jsonStr), &tokenData); err != nil {
+		return nil, fmt.Errorf("failed to parse token JSON: %w", err)
+	}
+
+	// Validate required fields
+	if tokenData.ClientID == "" {
+		return nil, fmt.Errorf("client_id is missing from token JSON")
+	}
+	if tokenData.ClientSecret == "" {
+		return nil, fmt.Errorf("client_secret is missing from token JSON")
+	}
+	if tokenData.Token == "" {
+		return nil, fmt.Errorf("token is missing from token JSON")
+	}
+
+	return &tokenData, nil
+}

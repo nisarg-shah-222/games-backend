@@ -28,6 +28,7 @@ type Config struct {
 
 	// Gmail Email
 	GmailTokenPath string
+	GmailTokenJSON string // Token JSON as environment variable (alternative to file)
 	GmailFromEmail string
 
 	OTPExpiryMinutes int
@@ -61,6 +62,7 @@ func Load() *Config {
 		MailgunBaseURL:   getEnv("MAILGUN_BASE_URL", "https://api.mailgun.net"),
 		MailgunFromEmail: getEnv("MAILGUN_FROM_EMAIL", "noreply@gamesapp.com"),
 		GmailTokenPath:   getEnv("GMAIL_TOKEN_PATH", "config/token.json"),
+		GmailTokenJSON:   getEnv("GMAIL_TOKEN_JSON", ""), // Token JSON as env var (alternative to file)
 		GmailFromEmail:   getEnv("GMAIL_FROM_EMAIL", "me"),
 		OTPExpiryMinutes: otpExpiryMinutes,
 		JWTSecret:        getEnv("JWT_SECRET", ""),
