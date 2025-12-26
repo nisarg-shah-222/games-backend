@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -175,8 +176,50 @@ func loadToken(tokenPath string) (*TokenData, error) {
 	return &tokenData, nil
 }
 
-// parseTokenJSON parses token data from JSON string
+// isBase64 checks if a string looks like base64 encoded data
+func isBase64(s string) bool {
+	// Base64 contains only A-Z, a-z, 0-9, +, /, =, and - and _ for URL encoding
+	// JSON typically starts with { or [
+	if len(s) == 0 {
+		return false
+	}
+	firstChar := s[0]
+	// If it starts with { or [, it's likely JSON
+	if firstChar == '{' || firstChar == '[' {
+		return false
+	}
+	// Check if it contains only base64 characters
+	base64Chars := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=-_"
+	for _, char := range s {
+		if !strings.ContainsRune(base64Chars, char) {
+			return false
+		}
+	}
+	return true
+}
+
+// parseTokenJSON parses token data from JSON string (supports base64 encoded input)
 func parseTokenJSON(jsonStr string) (*TokenData, error) {
+	jsonStr = strings.TrimSpace(jsonStr)
+	fmt.Println("jsonStr", jsonStr)
+
+	// Check if it looks like base64 or JSON
+	if isBase64(jsonStr) {
+		// Try to decode base64 first
+		decoded, err := base64.StdEncoding.DecodeString(jsonStr)
+		if err != nil {
+			// If standard base64 fails, try URL-safe base64
+			decoded, err = base64.URLEncoding.DecodeString(jsonStr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode base64 token: %w", err)
+			}
+		}
+		if len(decoded) > 0 {
+			jsonStr = string(decoded)
+		}
+	}
+	// If it doesn't look like base64, assume it's already JSON
+
 	var tokenData TokenData
 	if err := json.Unmarshal([]byte(jsonStr), &tokenData); err != nil {
 		return nil, fmt.Errorf("failed to parse token JSON: %w", err)
